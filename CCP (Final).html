@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>JS Compiler with setTimeout</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <style>
+      body {
+        background: linear-gradient(135deg, #2c5364, #203a43, #0f2027);
+        font-family: "Arial", sans-serif;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      #output {
+        display: flex;
+        border: 1px solid #ccc;
+        padding: 10px 20px;
+        height: 30dvh;
+        margin-top: 40px;
+        white-space: pre-wrap;
+        background-color: black;
+        color: white;
+        font-weight: 400;
+        width: 100%;
+        max-width: 600px;
+        position: relative;
+        margin-bottom: 30px;
+        /* Adding space for the fixed heading */
+      }
+
+      h1 {
+        font-size: 2.5em;
+        margin-bottom: 20px;
+      }
+
+      .container {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        text-align: center;
+      }
+
+      textarea {
+        width: 100%;
+        height: 150px;
+        margin-bottom: 20px;
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        font-size: 1em;
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        resize: none;
+      }
+
+      .made-by {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #ccc;
+      }
+
+      .made-by-below {
+        position: absolute;
+        top: 40px; /* Adjust the top value to place it below the first one */
+        right: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #ccc;
+      }
+
+      .made-by-bottom {
+        position: absolute;
+        top: 60px; /* Adjust the top value to place it below the first one */
+        right: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #ccc;
+      }
+
+      button {
+        background: #4caf50;
+        color: white;
+        padding: 15px 32px;
+        font-size: 1em;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      button:hover {
+        background: #45a049;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="made-by">Saim Amed (CT-19)</div>
+    <div class="made-by-below">Hamza Ahmed Khan (CT-35)</div>
+    <div class="made-by-bottom">Muhammad Abdul Rafay (CT-50)</div>
+    <div class="row" style="width: 90%">
+      <div class="col-6">
+        <span class="badge text-bg-secondary mb-4"
+          ><h1 class="mb-0">JS Compiler with setTimeout</h1></span
+        >
+        <div id="code-container">
+          <textarea id="code" rows="5" cols="50">
+            var h35 = "hamza";
+            var r50 = "rafay";
+            var s19 = "saim";
+
+            console.log(s19);
+            setTimeout(() => {
+                    console.log(r50);
+                  }, 2000);
+            console.log(h35);
+          
+          </textarea>
+          <button
+            style="
+              background-color: rgb(25, 25, 25);
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              cursor: pointer;
+            "
+            onmouseover="this.style.backgroundColor='black'"
+            onmouseout="this.style.backgroundColor='rgb(25, 25, 25)'"
+            onclick="compileCode()"
+          >
+            Compile and Run
+          </button>
+        </div>
+
+        <div id="output">
+          <div id="output-content"></div>
+        </div>
+        <div class="ccp" style="font-weight: bold">
+          <h5>Compiler Design (CCP)</h5>
+        </div>
+      </div>
+      <div class="col-6">
+        <span class="badge text-bg-secondary mb-4"
+          ><h1 class="mb-0">Lexical Output</h1></span
+        >
+        <div style="height: 75dvh; overflow-y: auto">
+          <table class="table table-success">
+            <thead>
+              <tr>
+                <th scope="col">Sno.</th>
+                <th scope="col">Token</th>
+                <th scope="col">Type</th>
+                <th scope="col">Line</th>
+              </tr>
+            </thead>
+            <tbody id="token-table-body"></tbody>
+          </table>
+          <h6 id="no-tokens-message">
+            <i> No Tokens created. Please compile first</i>
+          </h6>
+        </div>
+      </div>
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      function tokenize(code) {
+        const tokens = [];
+        const tokenTypes = [
+          { regex: /\s+/, type: "WHITESPACE" },
+          { regex: /\/\/.*/, type: "COMMENT" },
+          { regex: /\/\*[\s\S]*?\*\//, type: "COMMENT" },
+          { regex: /console\b/, type: "CONSOLE" },
+          { regex: /var\b/, type: "KEYWORD" },
+          { regex: /let\b/, type: "KEYWORD" },
+          { regex: /const\b/, type: "KEYWORD" }, // Add const as a keyword type
+          { regex: /\.log\b/, type: "LOG" },
+          { regex: /setTimeout\b/, type: "SETTIMEOUT" },
+          { regex: /\(/, type: "LPAREN" },
+          { regex: /\)/, type: "RPAREN" },
+          { regex: /=>/, type: "ARROW" },
+          { regex: /=/, type: "EQUAL" },
+          { regex: /{/, type: "LBRACE" },
+          { regex: /}/, type: "RBRACE" },
+          { regex: /;/, type: "SEMICOLON" },
+          { regex: /,/, type: "COMMA" },
+          { regex: /'.*?'/, type: "STRING" },
+          { regex: /".*?"/, type: "STRING" },
+          { regex: /\d+/, type: "NUMBER" }, // Numeric values
+          { regex: /[a-zA-Z_$][a-zA-Z0-9_$]*/, type: "IDENTIFIER" }, // Alphanumeric identifiers
+        ];
+
+        let position = 0;
+        let line = 1;
+
+        while (position < code.length) {
+          let match = false;
+
+          for (let type of tokenTypes) {
+            const regex = new RegExp("^" + type.regex.source);
+            const result = regex.exec(code.slice(position));
+
+            if (result) {
+              if (type.type !== "WHITESPACE" && type.type !== "COMMENT") {
+                tokens.push({ type: type.type, value: result[0], line });
+              }
+
+              const linesInToken = result[0].split("\n").length - 1;
+              line += linesInToken;
+              position += result[0].length;
+              match = true;
+              break;
+            }
+          }
+
+          if (!match) {
+            throw new Error(
+              `Unexpected token: ${code[position]} at line ${line}`
+            );
+          }
+        }
+
+        return tokens;
+      }
+
+      function displayTokens(tokens) {
+        const tbody = document.getElementById("token-table-body");
+        const noTokensMessage = document.getElementById("no-tokens-message");
+        tbody.innerHTML = ""; // Clear previous token rows
+
+        if (tokens.length > 0) {
+          noTokensMessage.style.display = "none"; // Hide the message if tokens are present
+        }
+
+        tokens.forEach((token, index) => {
+          const tr = document.createElement("tr");
+
+          const th = document.createElement("th");
+          th.scope = "row";
+          th.textContent = index + 1;
+          tr.appendChild(th);
+
+          const tdToken = document.createElement("td");
+          tdToken.textContent = token.value;
+          tr.appendChild(tdToken);
+
+          const tdType = document.createElement("td");
+          tdType.textContent = token.type;
+          tr.appendChild(tdType);
+
+          const tdLine = document.createElement("td");
+          tdLine.textContent = token.line;
+          tr.appendChild(tdLine);
+
+          tbody.appendChild(tr);
+        });
+      }
+
+      function parse(tokens) {
+        const ast = { type: "Program", body: [] };
+        let current = 0;
+        let declaredVariables = new Set(); // Set to store declared variables
+        let declaredConstants = new Set(); // Set to store declared constants
+
+        function walk() {
+          if (current >= tokens.length) {
+            throw new Error("Unexpected end of input");
+          }
+
+          let token = tokens[current];
+
+          if (token.type === "SETTIMEOUT") {
+            current++;
+            token = tokens[current];
+            if (token.type === "LPAREN") {
+              current++;
+              token = tokens[current];
+              if (token.type === "LPAREN") {
+                current++;
+                token = tokens[current];
+                if (token.type === "RPAREN") {
+                  current++;
+                  token = tokens[current];
+                  if (token.type === "ARROW") {
+                    current++;
+                    token = tokens[current];
+                    if (token.type === "LBRACE") {
+                      current++;
+                      const body = [];
+                      while (
+                        tokens[current] &&
+                        tokens[current].type !== "RBRACE"
+                      ) {
+                        body.push(walk());
+                      }
+                      if (!tokens[current]) {
+                        throw new Error(
+                          `Missing closing brace in setTimeout at line ${token.line}`
+                        );
+                      }
+                      current++;
+                      token = tokens[current];
+                      if (token.type === "COMMA") {
+                        current++;
+                        token = tokens[current];
+                        if (token.type === "NUMBER") {
+                          const delay = token.value;
+                          current++;
+                          token = tokens[current];
+                          if (token.type === "RPAREN") {
+                            current++;
+                            token = tokens[current];
+                            if (token?.type === "SEMICOLON") {
+                              current++;
+                              return {
+                                type: "SetTimeoutExpression",
+                                body,
+                                delay: parseInt(delay, 10),
+                                line: token.line,
+                              };
+                            } else {
+                              let tempToken = tokens[current - 1];
+                              throw new Error(
+                                `Missing semicolon after setTimeout at line ${tempToken.line}`
+                              );
+                            }
+                          } else {
+                            throw new Error(
+                              `Missing closing parenthesis in setTimeout at line ${token.line}`
+                            );
+                          }
+                        } else {
+                          throw new Error(
+                            `Missing delay value in setTimeout at line ${token.line}`
+                          );
+                        }
+                      } else {
+                        throw new Error(
+                          `Missing comma in setTimeout at line ${token.line}`
+                        );
+                      }
+                    } else {
+                      let tempToken = tokens[current - 1];
+                      throw new Error(
+                        `Missing opening brace after arrow function at line ${tempToken.line}`
+                      );
+                    }
+                  } else {
+                    throw new Error(
+                      `Missing arrow in setTimeout at line ${token.line}`
+                    );
+                  }
+                } else {
+                  throw new Error(
+                    `Missing closing parenthesis in arrow function at line ${token.line}`
+                  );
+                }
+              } else {
+                throw new Error(
+                  `Missing opening parenthesis in arrow function at line ${token.line}`
+                );
+              }
+            } else {
+              throw new Error(
+                `Missing opening parenthesis in setTimeout at line ${token.line}`
+              );
+            }
+          } else if (token.type === "CONSOLE") {
+            current++;
+            token = tokens[current];
+            if (token.type === "LOG") {
+              current++;
+              token = tokens[current];
+              if (token.type === "LPAREN") {
+                current++;
+                token = tokens[current];
+                if (token.type === "STRING" || token.type === "IDENTIFIER") {
+                  const argument = token.value;
+                  current++;
+                  token = tokens[current];
+                  if (token.type === "RPAREN") {
+                    current++;
+                    token = tokens[current];
+                    if (token?.type === "SEMICOLON") {
+                      current++;
+                      return {
+                        type: "CallExpression",
+                        callee: "console.log",
+                        arguments: [argument],
+                        line: token.line,
+                      };
+                    } else {
+                      let tempToken = tokens[current - 1];
+                      throw new Error(
+                        `Missing semicolon after console.log at line ${tempToken.line}`
+                      );
+                    }
+                  } else {
+                    throw new Error(
+                      `Missing closing parenthesis in console.log at line ${token.line}`
+                    );
+                  }
+                } else {
+                  throw new Error(
+                    `Missing string argument in console.log at line ${token.line}`
+                  );
+                }
+              } else {
+                throw new Error(
+                  `Missing opening parenthesis in console.log at line ${token.line}`
+                );
+              }
+            } else {
+              throw new Error(
+                `Missing .log after console at line ${token.line}`
+              );
+            }
+          } else if (token.type === "KEYWORD") {
+            let argument = [];
+            current++;
+            token = tokens[current];
+            var declarationType = "variable";
+            if (token.type === "IDENTIFIER") {
+              const name = token.value;
+              if (declaredVariables.has(name) || declaredConstants.has(name)) {
+                throw new Error(
+                  `Variable or constant '${name}' is already declared`
+                );
+              }
+              argument.push(name);
+              current++;
+              token = tokens[current];
+              if (token.type === "EQUAL") {
+                current++;
+                token = tokens[current];
+                if (token.type === "STRING" || token.type === "NUMBER") {
+                  const value = token.value;
+                  argument.push(value);
+                  current++;
+                  token = tokens[current];
+                  if (token?.type === "SEMICOLON") {
+                    current++;
+                    declarationType = argument.length === 2 ? "variable" : "constant";
+                    if (declarationType === "variable") {
+                      declaredVariables.add(argument[0]);
+                    } else {
+                      declaredConstants.add(argument[0]);
+                    }
+                    return {
+                      type: "Declaration",
+                      callee: declarationType,
+                      arguments: argument,
+                      line: token.line,
+                    };
+                  } else {
+                    let tempToken = tokens[current - 1];
+                    throw new Error(
+                      `Missing semicolon after ${declarationType} declaration at line ${tempToken.line}`
+                    );
+                  }
+                } else {
+                  throw new Error(
+                    `Invalid value assigned to ${declarationType} at line ${token.line}`
+                  );
+                }
+              } else {
+                throw new Error(
+                  `Missing '=' after ${declarationType} name at line ${token.line}`
+                );
+              }
+            } else {
+              throw new Error(
+                `Invalid ${declarationType} name at line ${token.line}`
+              );
+            }
+          } else {
+            throw new Error(
+              `Unexpected token: ${token.type} at line ${token.line}`
+            );
+          }
+        }
+
+        while (current < tokens.length) {
+          ast.body.push(walk());
+        }
+
+        return ast;
+      }
+
+      async function compileCode() {
+        const code = document.getElementById("code").value;
+        const outputElement = document.getElementById("output-content");
+        outputElement.textContent = ""; // Clear previous output
+        outputElement.style.color = "white";
+        var variables = [];
+        var errorOccurred = false; // Flag to track if any error occurred
+        var suppressOutput = false; // Flag to suppress console.log outputs outside setTimeout
+
+        try {
+          // Lexical Analysis
+          const tokens = await tokenize(code);
+
+          displayTokens(tokens);
+
+          // Syntactical Analysis
+          const ast = parse(tokens);
+
+          // Semantic Analysis and Execution
+          for (let i = 0; i < ast.body.length; i++) {
+            const node = ast.body[i];
+            if (
+              node.type === "CallExpression" &&
+              node.callee === "console.log"
+            ) {
+              if (!suppressOutput) {
+                const argument = node.arguments[0];
+                let argumentValue = "";
+                let foundValue = false;
+
+                // Check if the argument is a string literal
+                if (argument.startsWith('"') && argument.endsWith('"')) {
+                  argumentValue = argument.slice(1, -1); // Remove surrounding quotes
+                  foundValue = true;
+                } else {
+                  // Find the value of the argument in variables
+                  variables.forEach((variable) => {
+                    if (variable.name === argument) {
+                      argumentValue = variable.value;
+                      foundValue = true;
+                    }
+                  });
+                }
+
+                if (!foundValue) {
+                  outputElement.textContent = `Error: ${argument} is undefined at line ${node.line}`;
+                  outputElement.style.color = "red";
+                  errorOccurred = true;
+                  break;
+                } else {
+                  // Check if argumentValue is a string and remove quotes
+                  if (
+                    typeof argumentValue === "string" &&
+                    argumentValue.match(/^".*"$/)
+                  ) {
+                    argumentValue = argumentValue.slice(1, -1); // Remove surrounding quotes
+                  }
+
+                  // Output the value
+                  if (!errorOccurred) {
+                    outputElement.textContent += argumentValue + "\n";
+                  }
+                }
+              }
+            } else if (
+              node.type === "Declaration" &&
+              node.callee === "variable"
+            ) {
+              const variable = {
+                name: node.arguments[0],
+                value: node.arguments[1], // Ensure this captures the numeric value correctly
+              };
+              variables.push(variable);
+            } else if (node.type === "SetTimeoutExpression") {
+              setTimeout(() => {
+                node.body.forEach((bodyNode) => {
+                  if (
+                    bodyNode.type === "CallExpression" &&
+                    bodyNode.callee === "console.log"
+                  ) {
+                    if (!suppressOutput) {
+                      const argument = bodyNode.arguments[0];
+                      let argumentValue = "";
+                      let foundValue = false;
+
+                      // Check if the argument is a string literal
+                      if (argument.startsWith('"') && argument.endsWith('"')) {
+                        argumentValue = argument.slice(1, -1); // Remove surrounding quotes
+                        foundValue = true;
+                      } else {
+                        // Find the value of the argument in variables
+                        variables.forEach((variable) => {
+                          if (variable.name === argument) {
+                            argumentValue = variable.value;
+                            foundValue = true;
+                          }
+                        });
+                      }
+
+                      if (!foundValue) {
+                        outputElement.textContent = `Error: ${argument} is undefined at line ${bodyNode.line}`;
+                        outputElement.style.color = "red";
+                        errorOccurred = true;
+                        suppressOutput = true;
+                      } else {
+                        // Check if argumentValue is a string and remove quotes
+                        if (
+                          typeof argumentValue === "string" &&
+                          argumentValue.match(/^".*"$/)
+                        ) {
+                          argumentValue = argumentValue.slice(1, -1); // Remove surrounding quotes
+                        }
+
+                        // Output the value
+                        if (!errorOccurred) {
+                          outputElement.textContent += argumentValue + "\n";
+                        }
+                      }
+                    }
+                  }
+                });
+              }, node.delay);
+            } else {
+              throw new Error(`Unsupported node type at line ${node.line}`);
+            }
+          }
+
+          // If no errors occurred, reset output color to white
+          if (!errorOccurred) {
+            outputElement.style.color = "white";
+          }
+        } catch (e) {
+          outputElement.textContent = "Error: " + e.message;
+          outputElement.style.color = "red";
+        }
+      }
+    </script>
+  </body>
+</html>
